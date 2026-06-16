@@ -16,37 +16,36 @@ const parseVistas = (v) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const user = await User.findOne({ where: { email } });
-    if (!user)             return res.status(404).json({ message: "Usuario no encontrado" });
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
     if (decrypt(user.password) !== password)
-                           return res.status(401).json({ message: "Contraseña incorrecta" });
-    if (!user.verificado)  return res.status(403).json({ message: "Cuenta no verificada. Revisa tu correo." });
-    if (!user.activo)      return res.status(403).json({ message: "Tu cuenta está desactivada. Contacta al administrador." });
+      return res.status(401).json({ message: "Contraseña incorrecta" });
+    if (!user.verificado) return res.status(403).json({ message: "Cuenta no verificada. Revisa tu correo." });
+    if (!user.activo) return res.status(403).json({ message: "Tu cuenta está desactivada. Contacta al administrador." });
 
     const esAdmin = user.rol?.toLowerCase() === 'admin';
     let vistas = [];
-
     if (!esAdmin) {
       const consultor = await Consultor.findOne({ where: { email: user.email } });
       vistas = parseVistas(consultor?.vistas);
     }
 
     const payload = { id: user.id, rol: user.rol, email: user.email, vistas };
-    const token   = jwt.sign(payload, JWT_SECRET, { expiresIn: "8h" });
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "8h" });
 
     const userOut = {
-      id:         user.id,
-      nombre:     user.nombre,
-      email:      user.email,
-      rol:        user.rol,
+      id: user.id,
+      nombre: user.nombre,
+      email: user.email,
+      rol: user.rol,
       verificado: user.verificado,
-      activo:     user.activo,
+      activo: user.activo,
       vistas,
+      tokens: user.tokens,               
+      renovacion_tokens: user.renovacion_tokens, 
     };
 
     res.json({ token, user: userOut });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -55,7 +54,12 @@ export const login = async (req, res) => {
 export const registrarse = async (req, res) => {
   try {
     const { nombre, email, password, rol } = req.body;
-    const user = await User.create({ nombre, email, password: encrypt(password), rol });
+    const user = await User.create({
+      nombre,
+      email,
+      password: encrypt(password),
+      rol,
+    });
     res.json({ message: "Usuario creado", user });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -64,7 +68,11 @@ export const registrarse = async (req, res) => {
 
 export const me = async (req, res) => {
   const user = await User.findByPk(req.user.id);
-  res.json(user);
+  res.json({
+    ...user.toJSON(),
+    tokens: user.tokens,
+    renovacion_tokens: user.renovacion_tokens,
+  });
 };
 
 export const changePass = async (req, res) => {

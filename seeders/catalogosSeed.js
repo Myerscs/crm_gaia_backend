@@ -1,8 +1,5 @@
 import { Pais, Ciudad, Rubro, Estados } from "../modelos/relations.js";
 
-// ══════════════════════════════════════════════════════════════
-// DATOS
-// ══════════════════════════════════════════════════════════════
 const ESTADOS = [
   { nombre: "Lead" },
   { nombre: "Contactado" },
@@ -976,7 +973,6 @@ const CIUDADES = [
   { id: 571, pais_id: 121, nombre: "Taskent" },
   { id: 572, pais_id: 121, nombre: "Samarcanda" },
 
-  // ── Otro (122) ────────────────────────────────────────────
   { id: 573, pais_id: 122, nombre: "Otra ciudad" },
 ];
 
@@ -1149,30 +1145,20 @@ export const RUBROS = [
 
 export const cargarCatalogos = async () => {
   try {
-    // ── Países ──────────────────────────────────────────────
-    await Pais.bulkCreate(PAISES, {
-      updateOnDuplicate: ["nombre", "codigo_iso"],
-      returning: false,
-    });
+    const totalPaises = await Pais.count();
+    if (totalPaises > 0) {
+      console.log("ℹ Catálogos ya cargados.");
+      return;
+    }
 
-    // ── Ciudades ─────────────────────────────────────────────
-    await Ciudad.bulkCreate(CIUDADES, {
-      updateOnDuplicate: ["nombre", "pais_id"],
-      returning: false,
-    });
+    await Pais.bulkCreate(PAISES, { returning: false });
+    await Ciudad.bulkCreate(CIUDADES, { returning: false });
+    await Rubro.bulkCreate(RUBROS, { returning: false });
+    await Estados.bulkCreate(ESTADOS, { returning: false });
 
-    // ── Rubros ───────────────────────────────────────────────
-    await Rubro.bulkCreate(RUBROS, {
-      updateOnDuplicate: ["nombre", "descripcion" , "categoria"],
-      returning: false,
-    });
-    await Estados.bulkCreate(ESTADOS, {
-      updateOnDuplicate: ["nombre"],
-      returning: false,
-    });
-
+    console.log("Catálogos cargados correctamente.");
   } catch (err) {
-    console.error("❌ Error al cargar catálogos:", err.message);
+    console.error("Error al cargar catálogos:", err.message);
     throw err;
   }
 };

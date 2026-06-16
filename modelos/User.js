@@ -44,12 +44,24 @@ const User = sequelize.define("User", {
     type: DataTypes.STRING,
     allowNull: true
   },
-  google_token : {
+
+  google_token: {
     type: DataTypes.TEXT("long"),
     allowNull: true,
     defaultValue: null
+  },
+  tokens : {
+    type: DataTypes.INTEGER,
+    defaultValue: 100
+  } ,
+  renovacion_tokens: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  },
+  ia_activa: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
-
 }, {
   tableName: "users",
   timestamps: true

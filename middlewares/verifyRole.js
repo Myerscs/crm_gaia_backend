@@ -9,9 +9,7 @@ export default (roles) => {
       });
 
     }
-
     next();
-
   };
 
 };
