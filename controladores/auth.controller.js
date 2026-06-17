@@ -5,12 +5,28 @@ import { encrypt } from "../utils/encrypt.js";
 import { decrypt } from "../utils/decrypt.js";
 import { JWT_SECRET } from "../config/config.js";
 
-
 const parseVistas = (v) => {
   if (!v) return [];
   if (Array.isArray(v)) return v;
   try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; }
   catch { return []; }
+};
+
+const verificarYRenovarEnLogin = async (user) => {
+  const ahora = new Date();
+  const fechaRenovacion = new Date(user.renovacion_tokens);
+
+  if (ahora >= fechaRenovacion) {
+    const proximaRenovacion = new Date(ahora);
+    proximaRenovacion.setMonth(proximaRenovacion.getMonth() + 1);
+    proximaRenovacion.setHours(0, 0, 0, 0);
+
+    await user.update({
+      tokens: 100,
+      renovacion_tokens: proximaRenovacion,
+    });
+    await user.reload();
+  }
 };
 
 export const login = async (req, res) => {
@@ -23,7 +39,11 @@ export const login = async (req, res) => {
     if (!user.verificado) return res.status(403).json({ message: "Cuenta no verificada. Revisa tu correo." });
     if (!user.activo) return res.status(403).json({ message: "Tu cuenta está desactivada. Contacta al administrador." });
 
-    const esAdmin = user.rol?.toLowerCase() === 'admin';
+    if (user.rol?.toLowerCase() !== "admin") {
+      await verificarYRenovarEnLogin(user);
+    }
+
+    const esAdmin = user.rol?.toLowerCase() === "admin";
     let vistas = [];
     if (!esAdmin) {
       const consultor = await Consultor.findOne({ where: { email: user.email } });
@@ -41,8 +61,8 @@ export const login = async (req, res) => {
       verificado: user.verificado,
       activo: user.activo,
       vistas,
-      tokens: user.tokens,               
-      renovacion_tokens: user.renovacion_tokens, 
+      tokens: user.tokens,
+      renovacion_tokens: user.renovacion_tokens,
     };
 
     res.json({ token, user: userOut });
@@ -98,7 +118,6 @@ export const changePass = async (req, res) => {
     await user.update({ password: encrypt(passwordNueva) });
 
     res.json({ ok: true, mensaje: "Contraseña actualizada correctamente" });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

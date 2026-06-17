@@ -159,35 +159,6 @@ export const eliminarChat = async (req, res) => {
   }
 };
 
-const verificarYRenovarTokens = async (user) => {
-  const ahora = new Date();
-  let renovado = false;
-
-  if (!user.renovacion_tokens) {
-    user.renovacion_tokens = ahora;
-    user.tokens = 100;
-    renovado = true;
-    await user.save();
-    return { user, renovado };
-  }
-
-  const fechaRenovacion = new Date(user.renovacion_tokens);
-  const proximaRenovacion = new Date(fechaRenovacion);
-  proximaRenovacion.setMonth(proximaRenovacion.getMonth() + 1);
-  proximaRenovacion.setHours(0, 0, 0, 0);
-
-  if (ahora >= proximaRenovacion) {
-    user.tokens = 100;
-    user.renovacion_tokens = ahora;
-    renovado = true;
-    await user.save();
-  }
-
-  return { user, renovado };
-};
-
-// chatController.js – método enviarMensaje completo
-
 export const enviarMensaje = async (req, res) => {
   try {
     const { chatId } = req.params;
@@ -200,18 +171,15 @@ export const enviarMensaje = async (req, res) => {
       allowAttach = "true",
     } = req.body;
 
-    // Validación básica
     if (!pregunta?.trim()) {
       return res.status(400).json({ ok: false, mensaje: "'pregunta' es obligatoria." });
     }
 
-    // 1. Obtener usuario desde el token
     const user = await getUserDesdeToken(req);
     if (!user) {
       return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado." });
     }
 
-    // 2. Verificar que la IA esté activa
     if (!user.ia_activa) {
       return res.status(403).json({
         ok: false,
@@ -220,22 +188,23 @@ export const enviarMensaje = async (req, res) => {
       });
     }
 
-    // 3. Verificar y renovar tokens si corresponde
-    const { user: userActualizado, renovado } = await verificarYRenovarTokens(user);
-    if (renovado) {
-      console.log(`[TOKENS] Usuario ${userActualizado.email} renovó tokens. Nuevo saldo: ${userActualizado.tokens}`);
+    let userActualizado = user;
+    let renovado = false;
+    const esAdmin = user.rol?.toLowerCase() === "admin";
+
+    if (!esAdmin) {
+    
+      if (userActualizado.tokens <= 0) {
+        return res.status(403).json({
+          ok: false,
+          codigo: "SIN_TOKENS",
+          mensaje: "No tienes tokens disponibles. Espera a la renovación mensual.",
+        });
+      }
+    } else {
+      console.log(`[TOKENS] Administrador ${user.email} - tokens ilimitados, no se valida saldo`);
     }
 
-    // 4. Validar saldo de tokens
-    if (userActualizado.tokens <= 0) {
-      return res.status(403).json({
-        ok: false,
-        codigo: "SIN_TOKENS",
-        mensaje: "No tienes tokens disponibles. Espera a la renovación mensual.",
-      });
-    }
-
-    // 5. Preparar datos del chat
     const isWebSearch = webSearch === "true" || webSearch === true;
     const canAttach = allowAttach === "true" || allowAttach === true;
 
@@ -261,7 +230,6 @@ export const enviarMensaje = async (req, res) => {
 
     const intencion_pendiente = contexto?.intencion_pendiente || null;
 
-    // 6. Guardar mensaje del usuario (fuera de la transacción principal para evitar bloqueos)
     await Mensaje.create({
       chat_id: chatId,
       rol: "user",
@@ -275,7 +243,6 @@ export const enviarMensaje = async (req, res) => {
       archivosTexto = await processFiles(req.files);
     }
 
-    // 7. Llamada a la IA (query y answer)
     let queryResult, answerResult;
     let providerQuery, providerAnswer;
 
@@ -297,7 +264,6 @@ export const enviarMensaje = async (req, res) => {
       queryResult = resultQuery.result;
       providerQuery = resultQuery.providerUsado;
     } catch (err) {
-      // Si la IA falla, NO se descuenta token
       console.error("[IA] Error en db_query:", err.message);
       return res.status(500).json({
         ok: false,
@@ -307,7 +273,6 @@ export const enviarMensaje = async (req, res) => {
     }
 
     if (!queryResult.isValid) {
-      // Si la IA devuelve error, NO se descuenta token
       console.warn("[IA] db_query inválido:", queryResult.error);
       return res.status(422).json({
         ok: false,
@@ -360,7 +325,6 @@ export const enviarMensaje = async (req, res) => {
       answerResult = resultAnswer.result;
       providerAnswer = resultAnswer.providerUsado;
     } catch (err) {
-      // Si falla db_answer, NO se descuenta token
       console.error("[IA] Error en db_answer:", err.message);
       return res.status(500).json({
         ok: false,
@@ -389,12 +353,10 @@ export const enviarMensaje = async (req, res) => {
 
     const resumenFinal = resumenNuevo || contexto?.resumen || null;
 
-    // 8. Transacción para guardar mensaje assistant, actualizar contexto y DESCONTAR TOKEN
     const t = await sequelize.transaction();
     try {
       const totalTras = totalMensajes + 1;
 
-      // Guardar mensaje del asistente
       await Mensaje.create(
         {
           chat_id: chatId,
@@ -406,7 +368,6 @@ export const enviarMensaje = async (req, res) => {
         { transaction: t }
       );
 
-      // Actualizar contexto
       const contextoUpdate = { intencion_pendiente: nuevaIntencion };
       if (debeResumir) {
         contextoUpdate.resumen = resumenFinal;
@@ -417,40 +378,51 @@ export const enviarMensaje = async (req, res) => {
       }
       await contexto.update(contextoUpdate, { transaction: t });
 
-      // Si es el primer mensaje, actualizar título del chat
       if (totalMensajes === 0) {
         await chat.update({ titulo: pregunta.trim().slice(0, 80) }, { transaction: t });
       }
 
-      // 9. Descontar 1 token (solo si todo lo anterior fue exitoso)
-      userActualizado.tokens -= 1;
-      await userActualizado.save({ transaction: t });
+      const esAdmin = userActualizado.rol?.toLowerCase() === "admin";
+      if (!esAdmin) {
+        userActualizado.tokens -= 1;
+        await userActualizado.save({ transaction: t });
+        console.log(`[TOKENS] Usuario ${userActualizado.email} consumió 1 token. Saldo restante: ${userActualizado.tokens}`);
+      } else {
+        console.log(`[TOKENS] Administrador ${userActualizado.email} - no se descuenta token (ilimitado)`);
+      }
 
       await t.commit();
-      console.log(`[TOKENS] Usuario ${userActualizado.email} consumió 1 token. Saldo restante: ${userActualizado.tokens}`);
 
     } catch (writeErr) {
       await t.rollback();
       console.error("[TOKENS] Error en transacción, rollback. No se descontó token.", writeErr);
-      throw writeErr; // Re-lanzar para que lo capture el catch exterior
+      throw writeErr;
     }
 
-    // 10. Invalidar cachés
     await delCache(keyMensajes(chatId));
     if (totalMensajes === 0) {
       const user = await getUserDesdeToken(req);
       await delCache(keyChats(user?.id));
     }
 
-    // 11. Construir respuesta
     const huboRelevo = providerQuery !== provider || providerAnswer !== provider;
 
-    const tokens_ia = {
-      limite: 100,
-      usados: 100 - userActualizado.tokens,
-      disponibles: userActualizado.tokens,
-      renovacion: userActualizado.renovacion_tokens, // fecha base (última renovación)
-    };
+    const esAdminFinal = userActualizado.rol?.toLowerCase() === "admin";
+    const tokens_ia = esAdminFinal
+      ? {
+          limite: Infinity,
+          usados: 0,
+          disponibles: Infinity,
+          renovacion: null,
+          ilimitado: true,
+        }
+      : {
+          limite: 100,
+          usados: 100 - userActualizado.tokens,
+          disponibles: userActualizado.tokens,
+          renovacion: userActualizado.renovacion_tokens,
+          ilimitado: false,
+        };
 
     const CONTEXTO = {
       resumen: resumenFinal,
@@ -469,6 +441,7 @@ export const enviarMensaje = async (req, res) => {
       provider_query: providerQuery,
       provider_answer: providerAnswer,
       relevo_activado: huboRelevo,
+      es_admin: esAdminFinal,
     };
 
     return res.status(200).json({
