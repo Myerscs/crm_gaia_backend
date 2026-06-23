@@ -18,11 +18,10 @@ export const userDbQuery = (data_to_analyze) => {
   if (intencion_pendiente) {
     partes.push(
       `INTENCIÓN PENDIENTE DETECTADA EN TURNO ANTERIOR:\n${intencion_pendiente}\n` +
-      `Si el mensaje actual del usuario parece proveer datos para completar esa intención, trátalo como continuación de la misma acción.`
+      `Si el mensaje actual del usuario parece proveer datos para completar esa intención, trátalo como continuación de la misma acción y construye la query correspondiente.`
     );
   }
 
-  // ── Archivos adjuntos ────────────────────────────────────
   if (archivos_contexto.length > 0) {
     partes.push(
       `ARCHIVOS ADJUNTOS (úsalos para construir filtros o valores en la query):\n${archivos_contexto.join("\n\n")}`
@@ -41,7 +40,8 @@ export const userDbQuery = (data_to_analyze) => {
   y en "razon" lista exactamente qué campos faltan todavía.
 - Si la intención implica INSERT/UPDATE pero el schema solo permite SELECT,
   devuelve queryValida: false con razon: "operación de escritura — debe manejarse por endpoint dedicado"
-  e incluye en "razon" los datos recopilados hasta ahora para que el siguiente paso los use.`
+  e incluye en "razon" los datos recopilados hasta ahora para que el siguiente paso los use.
+- Si el usuario quiere enviar un archivo , preguntar por el consultor a enviar (si no está claro), asunto , mensaje, etc .Y conforme el usuario provea datos, los acumule en intencion_pendiente.`
   );
 
   return partes.join("\n\n");

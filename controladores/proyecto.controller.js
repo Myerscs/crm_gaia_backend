@@ -14,11 +14,15 @@ import {
 } from "../modelos/relations.js";
 import { INCLUDE_PROYECTO } from "../Helpers/h_proyecto.js";
 import { getEstadoId, resolverEstadoId } from "../Helpers/h_estados.js";
+import { delPattern, getCache, setCache } from "../utils/cache.js";
 
 export const listarProyectos = async (req, res) => {
   try {
     const { clienteId, activo, search, page = 1, limit = 20 } = req.query;
     const where = {};
+    const cacheKey = `proyectos:${clienteId ?? ""}:${activo ?? ""}:${search ?? ""}:${page}:${limit}`;
+    const cached = await getCache(cacheKey);
+    if (cached) return res.status(200).json({ ...cached, cached: true });
     if (clienteId) where.cliente_id = clienteId;
     if (activo !== undefined) where.activo = activo === "true";
     if (search) where.nombre = { [Op.iLike]: `%${search.trim()}%` };
@@ -28,7 +32,8 @@ export const listarProyectos = async (req, res) => {
       where, include: INCLUDE_PROYECTO,
       order: [["createdAt", "DESC"]], limit: +limit, offset, distinct: true,
     });
-
+    const result = { ok: true, total: count, page: +page, pages: Math.ceil(count / +limit), data: rows };
+    await setCache(cacheKey, result, 60 * 2);
     return res.status(200).json({
       ok: true, total: count, page: +page, pages: Math.ceil(count / +limit), data: rows,
     });
@@ -52,7 +57,7 @@ export const obtenerProyecto = async (req, res) => {
 
 export const crearProyecto = async (req, res) => {
   const t = await sequelize.transaction();
-  let proyectoId = null; 
+  let proyectoId = null;
 
   try {
     const { cliente_id, nombre, descripcion, areas = [] } = req.body;
@@ -94,11 +99,11 @@ export const crearProyecto = async (req, res) => {
       );
     }
 
-    proyectoId = proyecto.id; 
+    proyectoId = proyecto.id;
     await t.commit();
 
   } catch (err) {
-    await t.rollback(); 
+    await t.rollback();
     console.error("[crearProyecto]", err);
     return res.status(500).json({ ok: false, mensaje: "Error al crear proyecto.", detalle: err.message });
   }
@@ -109,6 +114,8 @@ export const crearProyecto = async (req, res) => {
   } catch (err) {
     console.error("[crearProyecto - lectura final]", err);
     return res.status(201).json({ ok: true, mensaje: "Proyecto creado.", data: { id: proyectoId } });
+  }finally {
+    await delPattern("proyectos:*");
   }
 };
 export const actualizarProyecto = async (req, res) => {
@@ -128,6 +135,8 @@ export const actualizarProyecto = async (req, res) => {
   } catch (err) {
     console.error("[actualizarProyecto]", err);
     return res.status(500).json({ ok: false, mensaje: "Error al actualizar proyecto.", detalle: err.message });
+  } finally {
+    await delPattern("proyectos:*");
   }
 };
 
@@ -141,6 +150,8 @@ export const eliminarProyecto = async (req, res) => {
   } catch (err) {
     console.error("[eliminarProyecto]", err);
     return res.status(500).json({ ok: false, mensaje: "Error al eliminar proyecto.", detalle: err.message });
+  } finally {
+    await delPattern("proyectos:*");
   }
 };
 
@@ -163,6 +174,8 @@ export const agregarAreas = async (req, res) => {
   } catch (err) {
     console.error("[agregarAreas]", err);
     return res.status(500).json({ ok: false, mensaje: "Error al agregar áreas.", detalle: err.message });
+  } finally {
+    await delPattern("proyectos:*");
   }
 };
 
@@ -177,6 +190,8 @@ export const quitarArea = async (req, res) => {
   } catch (err) {
     console.error("[quitarArea]", err);
     return res.status(500).json({ ok: false, mensaje: "Error al quitar área.", detalle: err.message });
+  } finally {
+    await delPattern("proyectos:*");
   }
 };
 

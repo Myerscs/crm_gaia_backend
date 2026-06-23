@@ -1,45 +1,22 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
 
-const EtapaProyecto = sequelize.define("EtapaProyecto",{
-
-   id:{
-    type:DataTypes.UUID,
-    defaultValue:DataTypes.UUIDV4,
-    primaryKey:true
+export const EtapaPropuesta = sequelize.define("EtapaPropuesta", {
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  proceso_id: {
+    type: DataTypes.UUID, allowNull: false,
+    references: { model: "procesos", key: "id" },
+    onDelete: "CASCADE", onUpdate: "CASCADE"
   },
-
-  oportunidad_id:{
-  type:DataTypes.UUID,
-  allowNull:false,
-  references:{
-    model:"oportunidad",
-    key:"id"
+  nivel_detalle:           { type: DataTypes.STRING },
+  fecha_entrega_propuesta: { type: DataTypes.DATE },
+  horas_presupuestadas:    { type: DataTypes.INTEGER },
+  valor_presupuestado:     { type: DataTypes.DECIMAL },
+  horas_gerencia:          { type: DataTypes.INTEGER,  allowNull: true },
+  valor_gerencia:          { type: DataTypes.DECIMAL,  allowNull: true },
+  observaciones:           { type: DataTypes.TEXT,     allowNull: true },
+  estado_id: {
+    type: DataTypes.UUID, allowNull: true,
+    references: { model: "estados", key: "id" }
   },
-  onDelete:"CASCADE",
-  onUpdate:"CASCADE"
-},
-
-  consultor_responsable_id:{
-    type:DataTypes.UUID,
-    allowNull:false
-  },
-
-  fecha_inicio_proyecto:{
-    type:DataTypes.DATE
-  },
-
-  fecha_cierre_facturacion:{
-    type:DataTypes.DATE
-  },
-
-  horas_reales:{
-    type:DataTypes.INTEGER
-  }
-
-},{
-  tableName:"etapa_proyecto",
-  timestamps:false
-});
-
-export default EtapaProyecto;
+}, { tableName: "etapa_propuesta", timestamps: false });

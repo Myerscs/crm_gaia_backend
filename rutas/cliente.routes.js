@@ -2,24 +2,20 @@ import { Router } from "express";
 import verifyToken from "../middlewares/verifyToken.js";
 
 import {
-  // Clientes
   listarClientes,
   obtenerCliente,
   crearCliente,
   actualizarCliente,
   eliminarCliente,
   restaurarCliente,
-  // Usuarios del cliente
   listarUsuarios,
   crearUsuario,
   actualizarUsuario,
   eliminarUsuario,
-  // Seguimientos
   listarSeguimientos,
   crearSeguimiento,
   actualizarSeguimiento,
   eliminarSeguimiento,
-  // Catálogos
   listarPaises,
   listarCiudadesPorPais,
   listarRubros,

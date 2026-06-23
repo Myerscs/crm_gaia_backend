@@ -182,7 +182,7 @@ export const reporteProyectos = async (req, res) => {
     const proyectos = await Proyecto.findAll({
       attributes: ["id", "nombre", "estado_actual", "horas_estimadas", "activo", "createdAt"],
       where,
-      include: [{ model: Cliente, as: "cliente", attributes: ["nombre", "empresa"] }],
+      include: [{ model: Cliente, as: "cliente", attributes: [ "empresa"] }],
       order: [["createdAt", "DESC"]],
     });
 
@@ -286,7 +286,7 @@ export const reportePipeline = async (req, res) => {
           model: Proyecto,
           as:    "proyecto",
           attributes: ["nombre"],
-          include: [{ model: Cliente, as: "cliente", attributes: ["nombre", "empresa"] }],
+          include: [{ model: Cliente, as: "cliente", attributes: ["empresa"] }],
         },
       ],
       order: [[{ model: EtapaPropuesta, as: "propuesta" }, "valor_presupuestado", "DESC"]],
@@ -578,7 +578,7 @@ export const reporteClientes = async (req, res) => {
   try {
     // ✅ MySQL: SUM(CASE WHEN) en vez de COUNT FILTER — etapa_propuesta singular
     const topClientesPorActividad = await sequelize.query(
-      `SELECT c.id, c.nombre, c.empresa,
+      `SELECT c.id, c.empresa,
               COUNT(DISTINCT pr.id) AS total_proyectos,
               SUM(CASE WHEN pr.activo = 1 THEN 1 ELSE 0 END) AS proyectos_activos,
               COUNT(DISTINCT p.id)  AS total_procesos,
@@ -740,7 +740,7 @@ export const actividadReciente = async (req, res) => {
             include: [{
               model: Proyecto, as: "proyecto",
               attributes: ["nombre"],
-              include: [{ model: Cliente, as: "cliente", attributes: ["nombre"] }],
+              include: [{ model: Cliente, as: "cliente", attributes: ["empresa"] }],
             }],
           }],
         }),
@@ -835,7 +835,7 @@ export const reporteForecast = async (req, res) => {
               DATEDIFF(NOW(), p.updatedAt) AS dias_sin_movimiento,
               ep.valor_presupuestado,
               pr.nombre AS proyecto_nombre,
-              c.nombre AS cliente_nombre
+              c.empresa AS cliente_nombre
        FROM procesos p
        LEFT JOIN etapa_propuesta ep ON ep.proceso_id = p.id
        LEFT JOIN proyectos pr ON pr.id = p.proyecto_id
@@ -1075,7 +1075,7 @@ export const reporteCapacidad = async (req, res) => {
               DATEDIFF(NOW(), p.updatedAt) AS dias_estancado,
               ep.valor_presupuestado,
               pr.nombre AS proyecto_nombre,
-              c.nombre AS cliente_nombre
+              c.empresa AS cliente_nombre
        FROM procesos p
        LEFT JOIN etapa_propuesta ep ON ep.proceso_id = p.id
        LEFT JOIN proyectos pr ON pr.id = p.proyecto_id

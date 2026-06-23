@@ -1,42 +1,74 @@
-import { Area }                   from "./Area.js";
+import { Estados } from "./Estados.js";
+import { Pais } from "./Pais.js";
+import { Ciudad } from "./Ciudad.js";
+import { Rubro } from "./Rubro.js";
+import { Rol } from "./Rol.js";
+import { Consultor } from "./Consultor.js";
+import { Cliente } from "./Cliente.js";
+import { UsuarioCliente } from "./UsuarioCliente.js";
+import { Area } from "./Area.js";
+import { HerramientaRpa } from "./HerramientaRpa.js";
+import { Proyecto } from "./Proyecto.js";
+import { Proceso } from "./Proceso.js";
+import { EtapaLevantamiento } from "./EtapaLevantamiento.js";
+import { EtapaEstimacion } from "./EtapaEstimacion.js";
+import { EtapaPropuesta } from "./EtapaPropuesta.js";
+import { EtapaPreliminar } from "./EtapaPreliminar.js";
+import { EtapaAprobacion } from "./EtapaAprobacion.js";
+import { EtapaEjecucion } from "./EtapaEjecucion.js";
+import { Interaccion } from "./Interaccion.js";
+import { InteraccionLevantamiento } from "./InteraccionLevantamiento.js";
+import { InteraccionEstimacion } from "./InteraccionEstimacion.js";
+import { Soporte } from "./Soporte.js";
+import { Licencia } from "./Licencia.js";
+import { LicenciaProceso } from "./LicenciaProceso.js";
+import { ProyectoArea } from "./ProyectoArea.js";
+import { ProyectoUsuarioRol } from "./ProyectoUsuarioRol.js";
 import { AsignacionHerramientas } from "./AsignacionHerramientas.js";
-import { Cliente }                from "./Cliente.js";
-import { Consultor }              from "./Consultor.js";
-import { EtapaAprobacion }        from "./EtapaAprobacion.js";
-import { EtapaEjecucion }         from "./EtapaEjecucion.js";
-import { EtapaEstimacion }        from "./EtapaEstimacion.js";
-import { EtapaLevantamiento }     from "./EtapaLevantamiento.js";
-import { EtapaPreliminar }        from "./EtapaPreliminar.js";
-import { EtapaPropuesta }         from "./EtapaPropuesta.js";
-import { EstadoProyecto }         from "./EstadoProyecto.js";
-import { HerramientaRpa }         from "./HerramientaRpa.js";
-import { Interaccion }            from "./Interaccion.js";
-import { Proceso }                from "./Proceso.js";
-import { Proyecto }               from "./Proyecto.js";
-import { ProyectoArea }           from "./ProyectoArea.js";
-import { ProyectoUsuarioRol }     from "./ProyectoUsuarioRol.js";
-import { Rol }                    from "./Rol.js";
-import { UsuarioCliente }         from "./UsuarioCliente.js";
-import { EtapaLevantamientoConsultor }          from "./EtapaLevantamientoConsultor.js";
-import { EtapaEstimacionConsultor }             from "./EtapaEstimacionConsultor.js";
-import { EtapaPropuestaConsultor }              from "./EtapaPropuestaConsultor.js";
-import { EtapaEjecucionConsultor }              from "./EtapaEjecucionConsultor.js";
-import { EtapaAprobacionConsultor }             from "./EtapaAprobacionConsultor.js";
-import { EtapaPreliminarConsultor }             from "./EtapaPreliminarConsultor.js";
-import { Chat }                   from "./Chat.js";
-import { ContextoChat }           from "./ContextoChat.js";
-import { Mensaje }                from "./Mensajes.js";
-import User                       from "./User.js";
-import { Pais }                   from "./Pais.js";
-import { Ciudad }                 from "./Ciudad.js";
-import { Rubro }                  from "./Rubro.js";
-import { SeguimientoCliente }     from "./SeguimientoCliente.js";
-import { Estados }                from "./Estados.js";
-import { ProcesoHerramienta }     from "./ProcesoHerramienta.js";
-import { InteraccionLevantamiento }          from "./InteraccionLevantamiento.js";
-import { InteraccionEstimacion }             from "./InteraccionEstimacion.js";
+import { ProcesoHerramienta } from "./ProcesoHerramienta.js";
+import { EtapaLevantamientoConsultor } from "./EtapaLevantamientoConsultor.js";
+import { EtapaEstimacionConsultor } from "./EtapaEstimacionConsultor.js";
+import { EtapaPropuestaConsultor } from "./EtapaPropuestaConsultor.js";
+import { EtapaEjecucionConsultor } from "./EtapaEjecucionConsultor.js";
+import { EtapaAprobacionConsultor } from "./EtapaAprobacionConsultor.js";
+import { EtapaPreliminarConsultor } from "./EtapaPreliminarConsultor.js";
 import { InteraccionLevantamientoConsultor } from "./InteraccionLevantamientoConsultor.js";
-import { InteraccionEstimacionConsultor }    from "./InteraccionEstimacionConsultor.js";
+import { InteraccionEstimacionConsultor } from "./InteraccionEstimacionConsultor.js";
+import { InteraccionPropuesta } from "./InteraccionPropuesta.js";
+import { InteraccionPropuestaConsultor } from "./InteraccionPropuestaConsultor.js";
+import { EstadoProyecto } from "./EstadoProyecto.js";
+import { Chat } from "./Chat.js";
+import { ContextoChat } from "./ContextoChat.js";
+import { Mensaje } from "./Mensajes.js";
+import User from "./User.js";
+import { SeguimientoCliente } from "./SeguimientoCliente.js";
+import { InteraccionAprobacion } from "./InteraccionAprobacion.js";
+import { InteraccionAprobacionConsultor } from "./InteraccionAprobacionConsultor.js";
+import { SeguimientoContacto } from "./SeguimientoContacto.js";
+import { EtapaAprobado } from "./EtapaAprobado.js";
+import { EtapaAprobadoConsultor } from "./EtapaAprobadoConsultor.js";
+import { InteraccionAprobado } from "./InteraccionAprobado.js";
+import { InteraccionAprobadoConsultor } from "./InteraccionAprobadoConsultor.js";
+import { InteraccionEjecucion } from "./InteraccionEjecucion.js";
+import { InteraccionEjecucionConsultor } from "./InteraccionEjecucionConsultor.js";
+import { EtapaCierre } from "./EtapaCierre.js";
+import { EtapaCierreConsultor } from "./EtapaCierreConsultor.js";
+import { InteraccionCierre } from "./InteraccionCierre.js";
+import { InteraccionCierreConsultor } from "./InteraccionCierreConsultor.js";
+import { EtapaFacturado } from "./EtapaFacturado.js";
+import { EtapaFacturadoConsultor } from "./EtapaFacturadoConsultor.js";
+import { EtapaFacturadoItem } from "./EtapaFacturadoItem.js";
+import { InteraccionFacturado } from "./InteraccionFacturado.js";
+import { InteraccionFacturadoConsultor } from "./InteraccionFacturadoConsultor.js";
+import { EtapaRechazado } from "./EtapaRechazado.js";
+import { EtapaRechazadoConsultor } from "./EtapaRechazadoConsultor.js";
+import { InteraccionRechazado } from "./InteraccionRechazado.js";
+import { InteraccionRechazadoConsultor } from "./InteraccionRechazadoConsultor.js";
+import { EtapaStandBy } from "./EtapaStandBy.js";
+import { EtapaStandByConsultor } from "./EtapaStandByConsultor.js";
+import { InteraccionStandBy } from "./InteraccionStandBy.js";
+import { InteraccionStandByConsultor } from "./InteraccionStandByConsultor.js";
+
 
 Cliente.hasMany(Proyecto,       { foreignKey: "cliente_id", as: "proyectos", onDelete: "CASCADE" });
 Cliente.hasMany(UsuarioCliente, { foreignKey: "cliente_id", as: "usuarios",  onDelete: "CASCADE" });
@@ -80,6 +112,52 @@ Proceso.hasOne(EtapaPreliminar,    { foreignKey: "proceso_id", as: "preliminar",
 Proceso.hasOne(EtapaAprobacion,    { foreignKey: "proceso_id", as: "aprobacion",    onDelete: "CASCADE" });
 Proceso.hasOne(EtapaEjecucion,     { foreignKey: "proceso_id", as: "ejecucion",     onDelete: "CASCADE" });
 
+EtapaAprobacion.belongsTo(Estados, { foreignKey: "estado_id", as: "estadoObj" });
+
+EtapaAprobacion.hasMany(InteraccionAprobacion,   { foreignKey: "etapa_aprobacion_id", as: "interacciones", onDelete: "CASCADE" });
+InteraccionAprobacion.belongsTo(EtapaAprobacion, { foreignKey: "etapa_aprobacion_id" });
+InteraccionAprobacion.belongsTo(Estados,         { foreignKey: "estado_id", as: "estadoObj" });
+InteraccionAprobacion.belongsToMany(Consultor, {
+  through: InteraccionAprobacionConsultor,
+  foreignKey: "interaccion_aprobacion_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_iac_inter_cons"
+});
+Consultor.belongsToMany(InteraccionAprobacion, {
+  through: InteraccionAprobacionConsultor,
+  foreignKey: "consultor_id", otherKey: "interaccion_aprobacion_id",
+  as: "interaccionesAprobacion", uniqueKey: "uniq_iac_inter_cons"
+});
+
+Proceso.hasOne(EtapaAprobado,    { foreignKey: "proceso_id", as: "aprobado", onDelete: "CASCADE" });
+EtapaAprobado.belongsTo(Proceso, { foreignKey: "proceso_id" });
+EtapaAprobado.belongsTo(Estados, { foreignKey: "estado_id", as: "estadoObj" });
+
+EtapaAprobado.belongsToMany(Consultor, {
+  through: EtapaAprobadoConsultor,
+  foreignKey: "etapa_aprobado_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_aprobado_cons"
+});
+Consultor.belongsToMany(EtapaAprobado, {
+  through: EtapaAprobadoConsultor,
+  foreignKey: "consultor_id", otherKey: "etapa_aprobado_id",
+  as: "aprobados", uniqueKey: "uniq_aprobado_cons"
+});
+
+EtapaAprobado.hasMany(InteraccionAprobado,   { foreignKey: "etapa_aprobado_id", as: "interacciones", onDelete: "CASCADE" });
+InteraccionAprobado.belongsTo(EtapaAprobado, { foreignKey: "etapa_aprobado_id" });
+InteraccionAprobado.belongsTo(Estados,       { foreignKey: "estado_id", as: "estadoObj" });
+InteraccionAprobado.belongsToMany(Consultor, {
+  through: InteraccionAprobadoConsultor,
+  foreignKey: "interaccion_aprobado_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_iaprobado_cons"
+});
+Consultor.belongsToMany(InteraccionAprobado, {
+  through: InteraccionAprobadoConsultor,
+  foreignKey: "consultor_id", otherKey: "interaccion_aprobado_id",
+  as: "interaccionesAprobado", uniqueKey: "uniq_iaprobado_cons"
+});
+
+
 EtapaLevantamiento.belongsTo(Proceso, { foreignKey: "proceso_id" });
 EtapaEstimacion.belongsTo(Proceso,    { foreignKey: "proceso_id" });
 EtapaPropuesta.belongsTo(Proceso,     { foreignKey: "proceso_id" });
@@ -112,6 +190,21 @@ Consultor.belongsToMany(EtapaPropuesta, { through: EtapaPropuestaConsultor, fore
 
 EtapaEjecucion.belongsToMany(Consultor, { through: EtapaEjecucionConsultor, foreignKey: "etapa_ejecucion_id", otherKey: "consultor_id",      as: "consultores", uniqueKey: "uniq_ejec_cons" });
 Consultor.belongsToMany(EtapaEjecucion, { through: EtapaEjecucionConsultor, foreignKey: "consultor_id",      otherKey: "etapa_ejecucion_id", as: "ejecuciones", uniqueKey: "uniq_ejec_cons" });
+EtapaEjecucion.belongsTo(Estados, { foreignKey: "estado_id", as: "estadoObj" });
+
+EtapaEjecucion.hasMany(InteraccionEjecucion,   { foreignKey: "etapa_ejecucion_id", as: "interacciones", onDelete: "CASCADE" });
+InteraccionEjecucion.belongsTo(EtapaEjecucion, { foreignKey: "etapa_ejecucion_id" });
+InteraccionEjecucion.belongsTo(Estados,        { foreignKey: "estado_id", as: "estadoObj" });
+InteraccionEjecucion.belongsToMany(Consultor, {
+  through: InteraccionEjecucionConsultor,
+  foreignKey: "interaccion_ejecucion_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_iejec_cons"
+});
+Consultor.belongsToMany(InteraccionEjecucion, {
+  through: InteraccionEjecucionConsultor,
+  foreignKey: "consultor_id", otherKey: "interaccion_ejecucion_id",
+  as: "interaccionesEjecucion", uniqueKey: "uniq_iejec_cons"
+});
 
 EtapaAprobacion.belongsToMany(Consultor, { through: EtapaAprobacionConsultor, foreignKey: "etapa_aprobacion_id", otherKey: "consultor_id",       as: "consultores", uniqueKey: "uniq_aprob_cons" });
 Consultor.belongsToMany(EtapaAprobacion, { through: EtapaAprobacionConsultor, foreignKey: "consultor_id",       otherKey: "etapa_aprobacion_id", as: "aprobaciones", uniqueKey: "uniq_aprob_cons" });
@@ -142,6 +235,18 @@ Cliente.hasMany(SeguimientoCliente, { foreignKey: "cliente_id", as: "seguimiento
 SeguimientoCliente.belongsTo(Cliente,        { foreignKey: "cliente_id" });
 SeguimientoCliente.belongsTo(Consultor,      { foreignKey: "consultor_id",       as: "consultor"        });
 SeguimientoCliente.belongsTo(UsuarioCliente, { foreignKey: "usuario_cliente_id", as: "contacto_cliente" });
+SeguimientoCliente.belongsToMany(UsuarioCliente, {
+  through: SeguimientoContacto,
+  foreignKey: "seguimiento_id",
+  otherKey: "usuario_cliente_id",
+  as: "contactos",
+});
+UsuarioCliente.belongsToMany(SeguimientoCliente, {
+  through: SeguimientoContacto,
+  foreignKey: "usuario_cliente_id",
+  otherKey: "seguimiento_id",
+  as: "seguimientos",
+});
 
 Cliente.belongsTo(Estados,        { foreignKey: "estado_id", as: "estadoObj" });
 Estados.hasMany(Cliente,          { foreignKey: "estado_id" });
@@ -151,6 +256,161 @@ Proceso.belongsTo(Estados,        { foreignKey: "estado_id", as: "estadoObj" });
 Estados.hasMany(Proceso,          { foreignKey: "estado_id" });
 EstadoProyecto.belongsTo(Estados, { foreignKey: "estado_id", as: "estadoObj" });
 Estados.hasMany(EstadoProyecto,   { foreignKey: "estado_id" });
+
+// Soporte
+Soporte.belongsTo(Cliente, { foreignKey: "cliente_id", as: "cliente" });
+Cliente.hasMany(Soporte, { foreignKey: "cliente_id", as: "soportes" });
+Soporte.belongsTo(UsuarioCliente, { foreignKey: "responsable_cliente_id", as: "responsableCliente" });
+Soporte.belongsTo(Consultor, { foreignKey: "created_by", as: "creador" });
+Soporte.belongsTo(Consultor, { foreignKey: "updated_by", as: "actualizador" });
+
+// Licencia
+Licencia.belongsTo(Cliente, { foreignKey: "cliente_id", as: "cliente" });
+Cliente.hasMany(Licencia, { foreignKey: "cliente_id", as: "licencias" });
+Licencia.belongsToMany(Proceso, { through: LicenciaProceso, foreignKey: "licencia_id", otherKey: "proceso_id", as: "procesos" });
+Proceso.belongsToMany(Licencia, { through: LicenciaProceso, foreignKey: "proceso_id", otherKey: "licencia_id", as: "licencias" });
+Licencia.belongsTo(Consultor, { foreignKey: "created_by", as: "creador" });
+Licencia.belongsTo(Consultor, { foreignKey: "updated_by", as: "actualizador" });
+Licencia.belongsTo(HerramientaRpa, { foreignKey: "herramienta_id", as: "herramienta" });
+HerramientaRpa.hasMany(Licencia,   { foreignKey: "herramienta_id", as: "licencias_herramienta" });
+
+EtapaPropuesta.hasMany(InteraccionPropuesta,   { foreignKey: "etapa_propuesta_id", as: "interacciones", onDelete: "CASCADE" });
+InteraccionPropuesta.belongsTo(EtapaPropuesta, { foreignKey: "etapa_propuesta_id" });
+InteraccionPropuesta.belongsTo(Estados,        { foreignKey: "estado_id", as: "estadoObj" });
+InteraccionPropuesta.belongsToMany(Consultor, {
+  through: InteraccionPropuestaConsultor,
+  foreignKey: "interaccion_propuesta_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_ipc_inter_cons"
+});
+Consultor.belongsToMany(InteraccionPropuesta, {
+  through: InteraccionPropuestaConsultor,
+  foreignKey: "consultor_id", otherKey: "interaccion_propuesta_id",
+  as: "interaccionesPropuesta", uniqueKey: "uniq_ipc_inter_cons"
+});
+
+EtapaPropuesta.belongsTo(Estados, { foreignKey: "estado_id", as: "estadoObj" });
+
+Proceso.hasOne(EtapaCierre,    { foreignKey: "proceso_id", as: "cierre", onDelete: "CASCADE" });
+EtapaCierre.belongsTo(Proceso, { foreignKey: "proceso_id" });
+EtapaCierre.belongsTo(Estados, { foreignKey: "estado_id", as: "estadoObj" });
+
+EtapaCierre.belongsToMany(Consultor, {
+  through: EtapaCierreConsultor,
+  foreignKey: "etapa_cierre_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_cierre_cons"
+});
+Consultor.belongsToMany(EtapaCierre, {
+  through: EtapaCierreConsultor,
+  foreignKey: "consultor_id", otherKey: "etapa_cierre_id",
+  as: "cierres", uniqueKey: "uniq_cierre_cons"
+});
+
+EtapaCierre.hasMany(InteraccionCierre,   { foreignKey: "etapa_cierre_id", as: "interacciones", onDelete: "CASCADE" });
+InteraccionCierre.belongsTo(EtapaCierre, { foreignKey: "etapa_cierre_id" });
+InteraccionCierre.belongsTo(Estados,     { foreignKey: "estado_id", as: "estadoObj" });
+InteraccionCierre.belongsToMany(Consultor, {
+  through: InteraccionCierreConsultor,
+  foreignKey: "interaccion_cierre_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_icierre_cons"
+});
+Consultor.belongsToMany(InteraccionCierre, {
+  through: InteraccionCierreConsultor,
+  foreignKey: "consultor_id", otherKey: "interaccion_cierre_id",
+  as: "interaccionesCierre", uniqueKey: "uniq_icierre_cons"
+});
+
+Proceso.hasOne(EtapaFacturado,    { foreignKey: "proceso_id", as: "facturado", onDelete: "CASCADE" });
+EtapaFacturado.belongsTo(Proceso, { foreignKey: "proceso_id" });
+EtapaFacturado.belongsTo(Estados, { foreignKey: "estado_id", as: "estadoObj" });
+
+EtapaFacturado.belongsToMany(Consultor, {
+  through: EtapaFacturadoConsultor,
+  foreignKey: "etapa_facturado_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_facturado_cons"
+});
+Consultor.belongsToMany(EtapaFacturado, {
+  through: EtapaFacturadoConsultor,
+  foreignKey: "consultor_id", otherKey: "etapa_facturado_id",
+  as: "facturados", uniqueKey: "uniq_facturado_cons"
+});
+
+EtapaFacturado.hasMany(InteraccionFacturado,   { foreignKey: "etapa_facturado_id", as: "interacciones", onDelete: "CASCADE" });
+InteraccionFacturado.belongsTo(EtapaFacturado, { foreignKey: "etapa_facturado_id" });
+InteraccionFacturado.belongsTo(Estados,        { foreignKey: "estado_id", as: "estadoObj" });
+EtapaFacturado.hasMany(EtapaFacturadoItem, {
+  foreignKey: "etapa_facturado_id", as: "facturas", onDelete: "CASCADE"
+});
+EtapaFacturadoItem.belongsTo(EtapaFacturado, {
+  foreignKey: "etapa_facturado_id"
+});
+InteraccionFacturado.belongsToMany(Consultor, {
+  through: InteraccionFacturadoConsultor,
+  foreignKey: "interaccion_facturado_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_ifacturado_cons"
+});
+Consultor.belongsToMany(InteraccionFacturado, {
+  through: InteraccionFacturadoConsultor,
+  foreignKey: "consultor_id", otherKey: "interaccion_facturado_id",
+  as: "interaccionesFacturado", uniqueKey: "uniq_ifacturado_cons"
+});
+
+Proceso.hasOne(EtapaRechazado,    { foreignKey: "proceso_id", as: "rechazado", onDelete: "CASCADE" });
+EtapaRechazado.belongsTo(Proceso, { foreignKey: "proceso_id" });
+EtapaRechazado.belongsTo(Estados, { foreignKey: "estado_id", as: "estadoObj" });
+
+EtapaRechazado.belongsToMany(Consultor, {
+  through: EtapaRechazadoConsultor,
+  foreignKey: "etapa_rechazado_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_rechazado_cons"
+});
+Consultor.belongsToMany(EtapaRechazado, {
+  through: EtapaRechazadoConsultor,
+  foreignKey: "consultor_id", otherKey: "etapa_rechazado_id",
+  as: "rechazados", uniqueKey: "uniq_rechazado_cons"
+});
+
+EtapaRechazado.hasMany(InteraccionRechazado,   { foreignKey: "etapa_rechazado_id", as: "interacciones", onDelete: "CASCADE" });
+InteraccionRechazado.belongsTo(EtapaRechazado, { foreignKey: "etapa_rechazado_id" });
+InteraccionRechazado.belongsTo(Estados,        { foreignKey: "estado_id", as: "estadoObj" });
+InteraccionRechazado.belongsToMany(Consultor, {
+  through: InteraccionRechazadoConsultor,
+  foreignKey: "interaccion_rechazado_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_irechazado_cons"
+});
+Consultor.belongsToMany(InteraccionRechazado, {
+  through: InteraccionRechazadoConsultor,
+  foreignKey: "consultor_id", otherKey: "interaccion_rechazado_id",
+  as: "interaccionesRechazado", uniqueKey: "uniq_irechazado_cons"
+});
+
+Proceso.hasOne(EtapaStandBy,    { foreignKey: "proceso_id", as: "stand_by", onDelete: "CASCADE" });
+EtapaStandBy.belongsTo(Proceso, { foreignKey: "proceso_id" });
+EtapaStandBy.belongsTo(Estados, { foreignKey: "estado_id", as: "estadoObj" });
+
+EtapaStandBy.belongsToMany(Consultor, {
+  through: EtapaStandByConsultor,
+  foreignKey: "etapa_stand_by_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_standby_cons"
+});
+Consultor.belongsToMany(EtapaStandBy, {
+  through: EtapaStandByConsultor,
+  foreignKey: "consultor_id", otherKey: "etapa_stand_by_id",
+  as: "standBys", uniqueKey: "uniq_standby_cons"
+});
+
+EtapaStandBy.hasMany(InteraccionStandBy,   { foreignKey: "etapa_stand_by_id", as: "interacciones", onDelete: "CASCADE" });
+InteraccionStandBy.belongsTo(EtapaStandBy, { foreignKey: "etapa_stand_by_id" });
+InteraccionStandBy.belongsTo(Estados,      { foreignKey: "estado_id", as: "estadoObj" });
+InteraccionStandBy.belongsToMany(Consultor, {
+  through: InteraccionStandByConsultor,
+  foreignKey: "interaccion_stand_by_id", otherKey: "consultor_id",
+  as: "consultores", uniqueKey: "uniq_istandby_cons"
+});
+Consultor.belongsToMany(InteraccionStandBy, {
+  through: InteraccionStandByConsultor,
+  foreignKey: "consultor_id", otherKey: "interaccion_stand_by_id",
+  as: "interaccionesStandBy", uniqueKey: "uniq_istandby_cons"
+});
 
 export {
   Area, AsignacionHerramientas, Cliente, Consultor,
@@ -167,4 +427,15 @@ export {
   ProcesoHerramienta,
   InteraccionLevantamiento, InteraccionEstimacion,
   InteraccionLevantamientoConsultor, InteraccionEstimacionConsultor,
+  Soporte, Licencia, LicenciaProceso,
+  InteraccionPropuesta, InteraccionPropuestaConsultor,
+  InteraccionAprobacion, InteraccionAprobacionConsultor,
+  EtapaAprobado, EtapaAprobadoConsultor, InteraccionAprobado, InteraccionAprobadoConsultor,
+  InteraccionEjecucion, InteraccionEjecucionConsultor,
+  EtapaCierre, EtapaCierreConsultor, InteraccionCierre, InteraccionCierreConsultor,
+  EtapaFacturado, EtapaFacturadoConsultor, InteraccionFacturado, InteraccionFacturadoConsultor,
+  EtapaFacturadoItem,
+  EtapaRechazado, EtapaRechazadoConsultor, InteraccionRechazado, InteraccionRechazadoConsultor,
+  EtapaStandBy, EtapaStandByConsultor, InteraccionStandBy, InteraccionStandByConsultor,
+  SeguimientoContacto
 };

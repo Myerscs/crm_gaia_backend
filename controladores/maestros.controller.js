@@ -1,11 +1,13 @@
 import { Op }           from "sequelize";
 import { Area, Rol, HerramientaRpa } from "../modelos/relations.js";
+import { getCache, setCache, delPattern } from "../utils/cache.js";
 
 const crudMaestro = (Modelo, nombreEntidad, campoBusqueda = "nombre") => ({
 
   listar: async (req, res) => {
     try {
       const { activo, search, page = 1, limit = 50 } = req.query;
+
       const where = {};
       if (activo !== undefined) where.activo = activo === "true";
       if (search) where[campoBusqueda] = { [Op.iLike]: `%${search.trim()}%` };
@@ -15,12 +17,54 @@ const crudMaestro = (Modelo, nombreEntidad, campoBusqueda = "nombre") => ({
         where, order: [[campoBusqueda, "ASC"]], limit: +limit, offset,
       });
 
-      return res.status(200).json({
-        ok: true, total: count, page: +page, pages: Math.ceil(count / +limit), data: rows,
-      });
+      const result = { ok: true, total: count, page: +page, pages: Math.ceil(count / +limit), data: rows };
+      return res.status(200).json(result);
     } catch (err) {
-      console.error(`[listar${nombreEntidad}]`, err);
       return res.status(500).json({ ok: false, mensaje: `Error al listar ${nombreEntidad}.`, detalle: err.message });
+    }
+  },
+
+  crear: async (req, res) => {
+    try {
+      const { nombre, descripcion, ...extra } = req.body;
+      if (!nombre?.trim()) return res.status(400).json({ ok: false, mensaje: "'nombre' es obligatorio." });
+      const existe = await Modelo.findOne({ where: { nombre: nombre.trim() } });
+      if (existe) return res.status(409).json({ ok: false, mensaje: `Ya existe ${nombreEntidad} con ese nombre.` });
+      const registro = await Modelo.create({ nombre: nombre.trim(), descripcion, ...extra });
+      return res.status(201).json({ ok: true, mensaje: `${nombreEntidad} creada.`, data: registro });
+    } catch (err) {
+      return res.status(500).json({ ok: false, mensaje: `Error al crear ${nombreEntidad}.`, detalle: err.message });
+    }
+  },
+
+  actualizar: async (req, res) => {
+    try {
+      const registro = await Modelo.findByPk(req.params.id);
+      if (!registro) return res.status(404).json({ ok: false, mensaje: `${nombreEntidad} no encontrada.` });
+      const { nombre, descripcion, activo, ...extra } = req.body;
+      if (nombre && nombre.trim() !== registro.nombre) {
+        const dup = await Modelo.findOne({ where: { nombre: nombre.trim() } });
+        if (dup) return res.status(409).json({ ok: false, mensaje: "Nombre ya en uso." });
+      }
+      await registro.update({ nombre, descripcion, activo, ...extra });
+      return res.status(200).json({ ok: true, mensaje: `${nombreEntidad} actualizada.`, data: registro });
+    } catch (err) {
+      return res.status(500).json({ ok: false, mensaje: `Error al actualizar ${nombreEntidad}.`, detalle: err.message });
+    }
+  },
+
+  eliminar: async (req, res) => {
+    try {
+      const registro = await Modelo.findByPk(req.params.id);
+      if (!registro) return res.status(404).json({ ok: false, mensaje: `${nombreEntidad} no encontrada.` });
+      if ("activo" in registro.dataValues) {
+        await registro.update({ activo: false });
+        return res.status(200).json({ ok: true, mensaje: `${nombreEntidad} desactivada.` });
+      }
+      await registro.destroy();
+      return res.status(200).json({ ok: true, mensaje: `${nombreEntidad} eliminada.` });
+    } catch (err) {
+      return res.status(500).json({ ok: false, mensaje: `Error al eliminar ${nombreEntidad}.`, detalle: err.message });
     }
   },
 
@@ -30,66 +74,10 @@ const crudMaestro = (Modelo, nombreEntidad, campoBusqueda = "nombre") => ({
       if (!registro) return res.status(404).json({ ok: false, mensaje: `${nombreEntidad} no encontrada.` });
       return res.status(200).json({ ok: true, data: registro });
     } catch (err) {
-      console.error(`[obtener${nombreEntidad}]`, err);
       return res.status(500).json({ ok: false, mensaje: `Error al obtener ${nombreEntidad}.`, detalle: err.message });
     }
   },
-
-  crear: async (req, res) => {
-    try {
-      const { nombre, descripcion, ...extra } = req.body;
-      if (!nombre?.trim()) return res.status(400).json({ ok: false, mensaje: "'nombre' es obligatorio." });
-
-      const existe = await Modelo.findOne({ where: { nombre: nombre.trim() } });
-      if (existe) return res.status(409).json({ ok: false, mensaje: `Ya existe ${nombreEntidad} con ese nombre.` });
-
-      const registro = await Modelo.create({ nombre: nombre.trim(), descripcion, ...extra });
-      return res.status(201).json({ ok: true, mensaje: `${nombreEntidad} creada.`, data: registro });
-    } catch (err) {
-      console.error(`[crear${nombreEntidad}]`, err);
-      return res.status(500).json({ ok: false, mensaje: `Error al crear ${nombreEntidad}.`, detalle: err.message });
-    }
-  },
-
-  actualizar: async (req, res) => {
-    try {
-      const registro = await Modelo.findByPk(req.params.id);
-      if (!registro) return res.status(404).json({ ok: false, mensaje: `${nombreEntidad} no encontrada.` });
-
-      const { nombre, descripcion, activo, ...extra } = req.body;
-
-      if (nombre && nombre.trim() !== registro.nombre) {
-        const dup = await Modelo.findOne({ where: { nombre: nombre.trim() } });
-        if (dup) return res.status(409).json({ ok: false, mensaje: "Nombre ya en uso." });
-      }
-
-      await registro.update({ nombre, descripcion, activo, ...extra });
-      return res.status(200).json({ ok: true, mensaje: `${nombreEntidad} actualizada.`, data: registro });
-    } catch (err) {
-      console.error(`[actualizar${nombreEntidad}]`, err);
-      return res.status(500).json({ ok: false, mensaje: `Error al actualizar ${nombreEntidad}.`, detalle: err.message });
-    }
-  },
-
-  eliminar: async (req, res) => {
-    try {
-      const registro = await Modelo.findByPk(req.params.id);
-      if (!registro) return res.status(404).json({ ok: false, mensaje: `${nombreEntidad} no encontrada.` });
-
-      // Soft delete si tiene campo activo, físico si no
-      if ("activo" in registro.dataValues) {
-        await registro.update({ activo: false });
-        return res.status(200).json({ ok: true, mensaje: `${nombreEntidad} desactivada.` });
-      }
-      await registro.destroy();
-      return res.status(200).json({ ok: true, mensaje: `${nombreEntidad} eliminada.` });
-    } catch (err) {
-      console.error(`[eliminar${nombreEntidad}]`, err);
-      return res.status(500).json({ ok: false, mensaje: `Error al eliminar ${nombreEntidad}.`, detalle: err.message });
-    }
-  },
 });
-
 
 const areaCrud        = crudMaestro(Area,          "Área");
 const rolCrud         = crudMaestro(Rol,           "Rol");

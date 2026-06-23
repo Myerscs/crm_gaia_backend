@@ -14,7 +14,6 @@ export const userDbAnswer = (data_to_analyze) => {
 
   const partes = [];
 
-  // ── Contexto de conversación para coherencia ─────────────
   if (historial_reciente.length > 0) {
     const historialTexto = historial_reciente
       .map((m) => `[${m.rol === "user" ? "Usuario" : "Asistente"}]: ${m.contenido}`)
@@ -65,7 +64,6 @@ export const userDbAnswer = (data_to_analyze) => {
     partes.push(`Redacta una respuesta clara, inteligente y coherente con la conversación previa.`);
   }
 
-  // ── Instrucción de resumen (solo si hace falta) ───────────
   if (generar_resumen) {
     const anteriorTexto = resumen_anterior
       ? `RESUMEN ANTERIOR (amplía o actualiza):\n${resumen_anterior}\n`

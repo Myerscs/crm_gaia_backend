@@ -8,7 +8,7 @@ export const AI_PROVIDERS = {
       'Content-Type': 'application/json'
     },
     formatPayload: (messages, options) => ({
-      model: options.model || 'deepseek-chat',
+      model: options.model || 'deepseek-v4-flash',
       messages,
       web_search: options.webSearch || false,
       max_tokens: options.tokens || 1500,

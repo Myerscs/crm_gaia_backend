@@ -5,37 +5,83 @@ import { parseAIResponse } from "../utils/jsonUtils.js";
 import { buildAIRequestPayload } from "../AI/buildAIRequestPayload.js";
 import { AI_PROVIDERS } from "../AI/providers.js";
 import { processFiles } from "../utils/fileProcessor.js";
+import { getCache, setCache, delCache } from "../utils/cache.js";
 
-const TOKENS_PARA_RESUMIR  = 2000;   
-const MENSAJES_DE_CONTEXTO = 10;    
+const TOKENS_PARA_RESUMIR = 2000;
+const MENSAJES_DE_CONTEXTO = 10;
+const CHATS_TTL = 60 * 2;
+const MENSAJES_TTL = 60 * 5;
+
+const RELEVO_PROVIDERS = ["deepseek", "claude"];
+
+const keyChats = (userId) => `chats:user:${userId}`;
+const keyMensajes = (chatId) => `chat:${chatId}:mensajes`;
 
 const getUserDesdeToken = async (req) => {
   return User.findOne({ where: { email: req.user.email } });
 };
 
-const llamarIA = async (mod, data_to_analyze) => {
-  const { payload, provider } = buildAIRequestPayload(mod, data_to_analyze, []);
+const llamarIAConProveedor = async (providerKey, mod, data_to_analyze) => {
+  const { payload, provider } = buildAIRequestPayload(mod, data_to_analyze, [], providerKey);
   const cfg = AI_PROVIDERS[provider];
-  const { data } = await axios.post(cfg.url, payload, { headers: cfg.headers });
-  const raw = cfg.extractResponse(data);
-  return parseAIResponse(raw);
+  const { data } = await axios.post(cfg.url, payload, {
+    headers: cfg.headers,
+    timeout: 60000,
+  });
+  return parseAIResponse(cfg.extractResponse(data));
 };
 
-// ────────────────────────────────────────────────────────────
+const llamarIA = async (mod, data_to_analyze, providerPrincipal = "deepseek") => {
+  const orden = [
+    providerPrincipal,
+    ...RELEVO_PROVIDERS.filter((p) => p !== providerPrincipal),
+  ];
+
+  let lastError = null;
+
+  for (const providerKey of orden) {
+    try {
+      const result = await llamarIAConProveedor(providerKey, mod, data_to_analyze);
+      return { result, providerUsado: providerKey };
+    } catch (err) {
+      const esErrorDeServidor =
+        !err.response ||                         // timeout / sin conexión
+        err.response.status === 429 ||           // rate limit
+        err.response.status === 500 ||           // error interno proveedor
+        err.response.status === 502 ||           // bad gateway
+        err.response.status === 503 ||           // servicio no disponible
+        err.response.status === 504;             // gateway timeout
+
+      if (esErrorDeServidor) {
+        console.warn(
+          `[relevo] Proveedor "${providerKey}" falló (${err.response?.status ?? "sin respuesta"}). ` +
+          `Intentando con el siguiente...`
+        );
+        lastError = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error(
+    `Todos los proveedores de IA fallaron. Último error: ${lastError?.message}`
+  );
+};
+
 export const crearChat = async (req, res) => {
   try {
     const { titulo } = req.body;
-
     const user = await getUserDesdeToken(req);
     if (!user)
       return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado." });
 
     const chat = await Chat.create({
       user_id: user.id,
-      titulo:  titulo?.trim() || "Nueva conversación",
+      titulo: titulo?.trim() || "Nueva conversación",
     });
 
     await ContextoChat.create({ chat_id: chat.id });
+    await delCache(keyChats(user.id));
 
     return res.status(201).json({ ok: true, mensaje: "Chat creado.", data: chat });
   } catch (err) {
@@ -44,18 +90,23 @@ export const crearChat = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────────────────
 export const listarChats = async (req, res) => {
   try {
     const user = await getUserDesdeToken(req);
     if (!user)
       return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado." });
 
+    const cacheKey = keyChats(user.id);
+    const cached = await getCache(cacheKey);
+    if (cached)
+      return res.status(200).json({ ok: true, data: cached });
+
     const chats = await Chat.findAll({
       where: { user_id: user.id, activo: true },
       order: [["updatedAt", "DESC"]],
     });
 
+    await setCache(cacheKey, chats, CHATS_TTL);
     return res.status(200).json({ ok: true, data: chats });
   } catch (err) {
     console.error("[listarChats]", err.message);
@@ -63,20 +114,26 @@ export const listarChats = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────────────────
 export const obtenerMensajes = async (req, res) => {
   try {
     const chat = await Chat.findByPk(req.params.chatId);
     if (!chat)
       return res.status(404).json({ ok: false, mensaje: "Chat no encontrado." });
 
-    const mensajes = await Mensaje.findAll({
-      where: { chat_id: req.params.chatId },
-      order: [["indice_orden", "ASC"]],
-    });
+    const cacheKey = keyMensajes(req.params.chatId);
+    const cached = await getCache(cacheKey);
+    if (cached)
+      return res.status(200).json({ ok: true, ...cached });
 
-    const contexto = await ContextoChat.findOne({ where: { chat_id: req.params.chatId } });
+    const [mensajes, contexto] = await Promise.all([
+      Mensaje.findAll({
+        where: { chat_id: req.params.chatId },
+        order: [["indice_orden", "ASC"]],
+      }),
+      ContextoChat.findOne({ where: { chat_id: req.params.chatId } }),
+    ]);
 
+    await setCache(cacheKey, { data: mensajes, contexto }, MENSAJES_TTL);
     return res.status(200).json({ ok: true, data: mensajes, contexto });
   } catch (err) {
     console.error("[obtenerMensajes]", err.message);
@@ -84,7 +141,6 @@ export const obtenerMensajes = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────────────────
 export const eliminarChat = async (req, res) => {
   try {
     const chat = await Chat.findByPk(req.params.chatId);
@@ -92,6 +148,10 @@ export const eliminarChat = async (req, res) => {
       return res.status(404).json({ ok: false, mensaje: "Chat no encontrado." });
 
     await chat.update({ activo: false });
+
+    const user = await getUserDesdeToken(req);
+    await delCache(keyChats(user?.id), keyMensajes(req.params.chatId));
+
     return res.status(200).json({ ok: true, mensaje: "Chat desactivado." });
   } catch (err) {
     console.error("[eliminarChat]", err.message);
@@ -99,19 +159,54 @@ export const eliminarChat = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────────────────
 export const enviarMensaje = async (req, res) => {
   try {
     const { chatId } = req.params;
     const {
       pregunta,
-      provider     = "claude",
-      model        = null,
+      provider = "deepseek",
+      model = "deepseek-v4-flash",
       currentRoute = "/",
+      webSearch = "false",
+      allowAttach = "true",
     } = req.body;
 
-    if (!pregunta?.trim())
+    if (!pregunta?.trim()) {
       return res.status(400).json({ ok: false, mensaje: "'pregunta' es obligatoria." });
+    }
+
+    const user = await getUserDesdeToken(req);
+    if (!user) {
+      return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado." });
+    }
+
+    if (!user.ia_activa) {
+      return res.status(403).json({
+        ok: false,
+        codigo: "IA_DESACTIVADA",
+        mensaje: "Tu asistente IA está desactivado. Contacta al administrador.",
+      });
+    }
+
+    let userActualizado = user;
+    let renovado = false;
+    const esAdmin = user.rol?.toLowerCase() === "admin";
+
+    if (!esAdmin) {
+    
+      if (userActualizado.tokens <= 0) {
+        return res.status(403).json({
+          ok: false,
+          codigo: "SIN_TOKENS",
+          mensaje: "No tienes tokens disponibles. Espera a la renovación mensual.",
+        });
+      }
+    } else {
+      console.log(`[TOKENS] Administrador ${user.email} - tokens ilimitados, no se valida saldo`);
+    }
+
+    const isWebSearch = webSearch === "true" || webSearch === true;
+    const canAttach = allowAttach === "true" || allowAttach === true;
 
     const [chat, contexto, mensajesRecientes, totalMensajes] = await Promise.all([
       Chat.findByPk(chatId),
@@ -124,176 +219,246 @@ export const enviarMensaje = async (req, res) => {
       Mensaje.count({ where: { chat_id: chatId } }),
     ]);
 
-    if (!chat || !chat.activo)
+    if (!chat || !chat.activo) {
       return res.status(404).json({ ok: false, mensaje: "Chat no encontrado o inactivo." });
+    }
 
     const historial_reciente = mensajesRecientes.reverse().map((m) => ({
-      rol:       m.rol,
+      rol: m.rol,
       contenido: m.contenido,
     }));
 
     const intencion_pendiente = contexto?.intencion_pendiente || null;
 
-    // ── 2. Guardar mensaje del usuario ───────────────────────
     await Mensaje.create({
-      chat_id:      chatId,
-      rol:          "user",
-      contenido:    pregunta.trim(),
+      chat_id: chatId,
+      rol: "user",
+      contenido: pregunta.trim(),
       indice_orden: totalMensajes,
-      tokens:       null,
+      tokens: null,
     });
 
-    // ── 3. Procesar archivos ─────────────────────────────────
-    const archivosTexto = await processFiles(req.files ?? []);
+    let archivosTexto = [];
+    if (canAttach && req.files && req.files.length > 0) {
+      archivosTexto = await processFiles(req.files);
+    }
 
-    // ── IA #1 · db_query ─────────────────────────────────────
-    // Recibe historial + intención_pendiente para que, si el mensaje actual
-    // son solo datos (nombre, email, etc.), infiera la acción del turno previo.
-    const queryResult = await llamarIA("db_query", {
-      pregunta,
-      historial_reciente,
-      intencion_pendiente,
-      resumen_contexto:  contexto?.resumen || null,
-      archivos_contexto: archivosTexto,
-      provider,
-      model,
-    });
+    let queryResult, answerResult;
+    let providerQuery, providerAnswer;
 
-    if (!queryResult.isValid)
+    try {
+      const resultQuery = await llamarIA(
+        "db_query",
+        {
+          pregunta,
+          historial_reciente,
+          intencion_pendiente,
+          resumen_contexto: contexto?.resumen || null,
+          archivos_contexto: archivosTexto,
+          provider,
+          model,
+          isWebSearch,
+        },
+        provider
+      );
+      queryResult = resultQuery.result;
+      providerQuery = resultQuery.providerUsado;
+    } catch (err) {
+      console.error("[IA] Error en db_query:", err.message);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al procesar la solicitud con la IA.",
+        detalle: err.message,
+      });
+    }
+
+    if (!queryResult.isValid) {
+      console.warn("[IA] db_query inválido:", queryResult.error);
       return res.status(422).json({
-        ok:      false,
+        ok: false,
         mensaje: "La IA no pudo procesar la solicitud.",
         detalle: queryResult.error,
       });
+    }
 
     const { queryValida, razon, query } = queryResult.parsed;
 
-    let resultados     = [];
-    let total_filas    = 0;
+    let resultados = [];
+    let total_filas = 0;
     let errorEjecucion = null;
 
     if (queryValida && query) {
       try {
-        const rows  = await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
-        resultados  = rows;
+        const rows = await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
+        resultados = rows;
         total_filas = rows.length;
       } catch (sqlErr) {
-        console.error("[chatController] Error SQL:", sqlErr.message);
+        console.error("[SQL] Error ejecutando query:", sqlErr.message);
         errorEjecucion = sqlErr.message;
       }
     }
 
-    // ── IA #2 · db_answer ────────────────────────────────────
-    // Recibe historial + intención_pendiente para mantener coherencia.
-    // Devuelve "intencion_pendiente" (nueva/actualizada o null si cerró)
-    // y "resumen" solo cuando debeResumir=true.
     const tokensAcumulados = (contexto?.tokens_acumulados || 0) + pregunta.length;
-    const debeResumir      = tokensAcumulados > TOKENS_PARA_RESUMIR;
+    const debeResumir = tokensAcumulados > TOKENS_PARA_RESUMIR;
 
-    const answerResult = await llamarIA("db_answer", {
-      pregunta_original: pregunta,
-      current_route:     currentRoute,
-      razon_query:       razon,
-      query_valida:      queryValida && !errorEjecucion,
-      resultados:        resultados.slice(0, 50),
-      total_filas,
-      archivos_contexto: archivosTexto,
-      historial_reciente,
-      intencion_pendiente,
-      generar_resumen:   debeResumir,
-      resumen_anterior:  contexto?.resumen || null,
-      provider,
-      model,
-    });
+    try {
+      const resultAnswer = await llamarIA(
+        "db_answer",
+        {
+          pregunta_original: pregunta,
+          current_route: currentRoute,
+          razon_query: razon,
+          query_valida: queryValida && !errorEjecucion,
+          resultados: resultados.slice(0, 50),
+          total_filas,
+          archivos_contexto: archivosTexto,
+          historial_reciente,
+          intencion_pendiente,
+          generar_resumen: debeResumir,
+          resumen_anterior: contexto?.resumen || null,
+          provider,
+          model,
+          isWebSearch,
+        },
+        provider
+      );
+      answerResult = resultAnswer.result;
+      providerAnswer = resultAnswer.providerUsado;
+    } catch (err) {
+      console.error("[IA] Error en db_answer:", err.message);
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error al formatear la respuesta.",
+        detalle: err.message,
+      });
+    }
 
-    if (!answerResult.isValid)
+    if (!answerResult.isValid) {
+      console.warn("[IA] db_answer inválido:", answerResult.error);
       return res.status(422).json({
-        ok:      false,
+        ok: false,
         mensaje: "Error al formatear la respuesta.",
         detalle: answerResult.error,
       });
+    }
 
     const {
       respuesta,
       tiene_datos,
       sugerencias,
-      actions                  = [],
-      intencion_pendiente:       nuevaIntencion = null,
-      resumen:                   resumenNuevo  = null,
+      actions = [],
+      intencion_pendiente: nuevaIntencion = null,
+      resumen: resumenNuevo = null,
     } = answerResult.parsed;
-
-    console.log("[db_answer] intencion_pendiente:", nuevaIntencion);
-    if (resumenNuevo) console.log("[contexto] resumen:", resumenNuevo.slice(0, 100));
 
     const resumenFinal = resumenNuevo || contexto?.resumen || null;
 
-    // ── 4. Escrituras en transacción corta ───────────────────
     const t = await sequelize.transaction();
     try {
       const totalTras = totalMensajes + 1;
 
       await Mensaje.create(
         {
-          chat_id:      chatId,
-          rol:          "assistant",
-          contenido:    respuesta,
+          chat_id: chatId,
+          rol: "assistant",
+          contenido: respuesta,
           indice_orden: totalTras,
-          tokens:       null,
+          tokens: null,
         },
         { transaction: t }
       );
 
-      // Un solo update del contexto con todos los campos necesarios
-      const contextoUpdate = {
-        intencion_pendiente: nuevaIntencion,   // null limpia la intención si se completó
-      };
-
+      const contextoUpdate = { intencion_pendiente: nuevaIntencion };
       if (debeResumir) {
-        contextoUpdate.resumen            = resumenFinal;
+        contextoUpdate.resumen = resumenFinal;
         contextoUpdate.mensajes_resumidos = totalTras + 1;
-        contextoUpdate.tokens_acumulados  = 0;
+        contextoUpdate.tokens_acumulados = 0;
       } else {
         contextoUpdate.tokens_acumulados = tokensAcumulados + respuesta.length;
       }
-
       await contexto.update(contextoUpdate, { transaction: t });
 
       if (totalMensajes === 0) {
-        await chat.update(
-          { titulo: pregunta.trim().slice(0, 80) },
-          { transaction: t }
-        );
+        await chat.update({ titulo: pregunta.trim().slice(0, 80) }, { transaction: t });
+      }
+
+      const esAdmin = userActualizado.rol?.toLowerCase() === "admin";
+      if (!esAdmin) {
+        userActualizado.tokens -= 1;
+        await userActualizado.save({ transaction: t });
+        console.log(`[TOKENS] Usuario ${userActualizado.email} consumió 1 token. Saldo restante: ${userActualizado.tokens}`);
+      } else {
+        console.log(`[TOKENS] Administrador ${userActualizado.email} - no se descuenta token (ilimitado)`);
       }
 
       await t.commit();
+
     } catch (writeErr) {
       await t.rollback();
+      console.error("[TOKENS] Error en transacción, rollback. No se descontó token.", writeErr);
       throw writeErr;
     }
 
-    // ── 5. Respuesta final ───────────────────────────────────
+    await delCache(keyMensajes(chatId));
+    if (totalMensajes === 0) {
+      const user = await getUserDesdeToken(req);
+      await delCache(keyChats(user?.id));
+    }
+
+    const huboRelevo = providerQuery !== provider || providerAnswer !== provider;
+
+    const esAdminFinal = userActualizado.rol?.toLowerCase() === "admin";
+    const tokens_ia = esAdminFinal
+      ? {
+          limite: Infinity,
+          usados: 0,
+          disponibles: Infinity,
+          renovacion: null,
+          ilimitado: true,
+        }
+      : {
+          limite: 100,
+          usados: 100 - userActualizado.tokens,
+          disponibles: userActualizado.tokens,
+          renovacion: userActualizado.renovacion_tokens,
+          ilimitado: false,
+        };
+
+    const CONTEXTO = {
+      resumen: resumenFinal,
+      intencion_pendiente: nuevaIntencion,
+      mensajes_resumidos: contexto?.mensajes_resumidos ?? 0,
+      tokens_acumulados: debeResumir ? 0 : tokensAcumulados + respuesta.length,
+    };
+
+    const debug = {
+      query_generada: query || null,
+      total_filas,
+      error_sql: errorEjecucion,
+      web_search_enabled: isWebSearch,
+      attach_enabled: canAttach,
+      provider_solicitado: provider,
+      provider_query: providerQuery,
+      provider_answer: providerAnswer,
+      relevo_activado: huboRelevo,
+      es_admin: esAdminFinal,
+    };
+
     return res.status(200).json({
       ok: true,
       respuesta,
       tiene_datos,
       sugerencias,
       actions,
-      contexto: {
-        resumen:             resumenFinal,
-        intencion_pendiente: nuevaIntencion,
-        mensajes_resumidos:  contexto?.mensajes_resumidos ?? 0,
-        tokens_acumulados:   debeResumir ? 0 : tokensAcumulados + respuesta.length,
-      },
-      debug: {
-        query_generada: query || null,
-        total_filas,
-        error_sql:      errorEjecucion,
-      },
+      tokens_ia,
+      contexto: CONTEXTO,
+      debug,
     });
+
   } catch (err) {
-    console.error("[enviarMensaje]", err.message);
+    console.error("[enviarMensaje] Error general:", err.message);
     return res.status(500).json({
-      ok:      false,
+      ok: false,
       mensaje: "Error en el flujo de chat.",
       detalle: err.message,
     });

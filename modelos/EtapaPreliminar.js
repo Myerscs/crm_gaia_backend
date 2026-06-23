@@ -29,9 +29,10 @@ export const EtapaPreliminar = sequelize.define("EtapaPreliminar",{
     type:DataTypes.TEXT,
     allowNull:true
   },
-  viable:{
-    type:DataTypes.BOOLEAN
-  }
+ probabilidad: {
+    type: DataTypes.ENUM('Alta', 'Media', 'Baja'),
+    allowNull: true,
+  },
 },{
   tableName:"etapa_preliminar",
   timestamps:false

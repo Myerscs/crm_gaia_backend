@@ -6,12 +6,17 @@ export const systemDbQuery = (data_to_analyze) => {
   
   const contexto = resumen_contexto ? `\nCONTEXTO PREVIO:\n${resumen_contexto}\n` : "";
   const schema = resolveSchemaFragments(pregunta, historial_reciente);
-
-  return baseSystemInstruction(`Eres un traductor de lenguaje natural a MySQL. Devuelve SOLO JSON.
+  const prompt = `Eres un traductor de lenguaje natural a MySQL. Devuelve SOLO JSON.
 ${contexto}
 SCHEMA RELEVANTE:
 ${schema}
 
 FORMATO OBLIGATORIO (sin backticks, sin texto extra):
-{"queryValida":true,"razon":"string","query":"SELECT...","parametros":[]}`);
+{
+  "queryValida": false, 
+  "razon": "operación de escritura — debe manejarse por endpoint dedicado. Datos recopilados: { ... }",
+  "query": null,
+  "parametros": []
+}`
+  return baseSystemInstruction(prompt);
 };

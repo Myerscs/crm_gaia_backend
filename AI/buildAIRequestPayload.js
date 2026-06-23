@@ -5,8 +5,8 @@ export const buildAIRequestPayload = (mod, data_to_analyze, files = []) => {
   const handler = MOD_HANDLERS[mod.toLowerCase()];
   if (!handler) throw new Error(`Modo desconocido: ${mod}`);
 
-  const provider = data_to_analyze?.provider || 'claude';
-  const model = data_to_analyze?.model || 'claude-opus-4-5'
+  const provider = data_to_analyze?.provider || 'deepseek';
+  const model = data_to_analyze?.model || 'deepseek-v4-flash';
   
   const providerConfig = AI_PROVIDERS[provider];
   if (!providerConfig) throw new Error(`Provider desconocido: ${provider}`);
@@ -40,5 +40,8 @@ export const buildAIRequestPayload = (mod, data_to_analyze, files = []) => {
     }];
   }
 
-  return { payload: providerConfig.formatPayload(messages, options), provider };
+  return { 
+    payload: providerConfig.formatPayload(messages, options), 
+    provider 
+  };
 };

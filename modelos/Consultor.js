@@ -7,40 +7,20 @@ export const Consultor = sequelize.define(
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      primaryKey: true,
     },
+    nombre:   { type: DataTypes.STRING,  allowNull: false },
+    email:    { type: DataTypes.STRING,  allowNull: false },
+    rol:      { type: DataTypes.STRING,  allowNull: false },  
+    telefono: { type: DataTypes.STRING,  allowNull: true },
+    activo:   { type: DataTypes.BOOLEAN, defaultValue: true },
+    fecha_ingreso: { type: DataTypes.DATEONLY, allowNull: true },
 
-    nombre: {
-      type: DataTypes.STRING,
-      allowNull: false
-    },
-
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false
-    },
-
-    rol: {
-      type: DataTypes.ENUM("consultor", "admin"),
-      allowNull: false
-    },
-
-    telefono: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    activo: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true
-    },
-    fecha_ingreso: {
-      type: DataTypes.DATEONLY,
+    vistas: {
+      type: DataTypes.JSON,
       allowNull: true,
+      defaultValue: [],   
     },
   },
-  {
-    tableName: "consultores",
-    timestamps: true
-  }
+  { tableName: "consultores", timestamps: true }
 );
-
